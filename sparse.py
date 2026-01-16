@@ -10,20 +10,23 @@ def pad(s, val, l, left=False):
         if left:
             s = val + s
         else:
-            s += s
+            s += val
     return s
 
 
 functionReplacements = {
     "&":" and ",
-    "^":" or ",
+    "^":" and ",
+    "|":" or ",
     "!":" not "
 }
 argumentReplacements = {
     "T":"True",
     "F":"False",
     "t":"True",
-    "f":"False"
+    "f":"False",
+    "0":0,
+    "1":1
 }
 
 possibleArguments = "abcdefghijklmnopqrstuvwxyz"
@@ -63,57 +66,74 @@ class Sentence:
         userFns[self.name+"_user"] = self
         print(f"Executing {lambaFormat} ...")
 
-    def table(self):
+    def gen_table(self):
+        self.truthDict = {}
         curArgs = [False]*len(self.arguments)
-        header = f"| {','.join(self.arguments)}\t| ({self.name}) {self.text}\t|"
-        print('-'*len(header)+10*'-')
-        print(header)
-        print('-'*len(header)+10*'-')
         i = 0
         while True:
-            for idx,c in enumerate(pad(str(bin(i))[2:], "0", len(self.arguments), left=True)):
+            nStr = pad(str(bin(i))[2:], "0", len(self.arguments), left=True)
+            for idx,c in enumerate(nStr):
                 if c == "1":
                     curArgs[idx] = True
                 elif c == "0":
                     curArgs[idx] = False
-            print(f"| {','.join([str(e) for e in curArgs])}\t| {self.fn(*curArgs)}\t|")
+            self.truthDict[nStr] = self.fn(*curArgs) 
             if curArgs == [True]*len(self.arguments):
                 break
             i += 1
-        print('-'*len(header)+10*'-')
 
-def evaluate(fn):
-        name, fn = fn.split("=")
-        name = name.replace(" ", "")
-        formattedInput = ""
-        arguments = []
-        for c in fn:
-            if c in possibleArguments and c not in arguments:
-                arguments += c  
-        for c in fn:
-            if c in functionReplacements:
-                formattedInput += functionReplacements[c]
-            else:
-                formattedInput += c
-        lambaFormat = f"{name}_user = lambda {','.join(arguments)}: {formattedInput}"
-        exec(lambaFormat, locals())
-        userFns[name+"_user"] = fn
-        print(f"Executing {lambaFormat} ...")
+    def table(self):
+        self.gen_table()
+        curArgs = [False]*len(self.arguments)
+        header = f" {','.join(self.arguments)} | ({self.name}) {self.text} "
+        sectionLens = [len(header.split("|")[0])+1,len(header.split("|")[1])+1]
+        header = "|" + header + "|"
+        print(sectionLens)
+        separator = '-'*len(header)+header.count("\t")*8*"-"
+        print(separator)
+        print(header)
+        print(separator)
+        r = {"0":"F","1":"T"}
+        for i in self.truthDict:
+            out = "| "
+            for c in i:
+                out += r[c]+","
+            # print(f"'{out}'")
+            out = out[:-1] 
+            # print(f"'{out}'")
+            out = pad(out," ",sectionLens[0])
+            # print(f"'{out}'")
+            out += "| "
+            # print(f"'{out}'")
+            out += f"{self.truthDict[i]}"
+            # print(f"'{out}'")
+            out = pad(out, " ", sectionLens[0]+sectionLens[1]) + "|"
+            # print(f"'{out}'")
+            print(out)
+        print(separator)
 
 while True:
-    i = input(">>> ")
-    print(i.split(" "))
-    if "=" in i:
-        t = Sentence(i.split("=")[0], i.split("=")[1])
-        userFns[t.name+"_user"] = t
-    elif i.split(" ")[0] == "table":
-        t = Sentence("anon",i.split(" ")[1])
-        print(t.table())
-    else:
-        fn = i.split("{")[0]
-        args = i.split("{")[1]
-        if args[-1] == "}":
-            args = args[:-1]
-        for i in argumentReplacements:
-            args.replace(i,argumentReplacements[i])
-        print(userFns[fn+"_user"].fn(*args.split(",")))
+    try:
+        i = input(">>> ")
+        print(i.split(" "))
+        if i == "us":
+            print(userFns)
+        elif "=" in i:
+            t = Sentence(i.split("=")[0], i.split("=")[1])
+            userFns[t.name+"_user"] = t
+        elif i.split(" ")[0] == "table":
+            t = Sentence("anon",i.split(" ")[1])
+            t.table()
+        else:
+            fn = i.split("{")[0]
+            args = i.split("{")[1]
+            args = args.split(",")
+            if args[-1] == "}":
+                args = args[:-1]
+            for i in argumentReplacements:
+                for b in range(len(args)):
+                    if args[b] == i:
+                        args[b] = argumentReplacements[i]
+            print(userFns[fn+"_user"].fn(*args))
+    except Exception as e:
+        print(f"There was an exception '{e}' during execution.")
