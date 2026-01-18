@@ -1,2 +1,7 @@
-G = p
 -> = !p|q
+A = p|q
+B = ->{A,A}
+list
+table ->
+table A
+table B

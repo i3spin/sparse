@@ -1,0 +1,39 @@
+Loading file 'test'...
+Did reg return and returned !p|q
+f = lambda p,q:  not p or q
+Defined '->' as 'f = lambda p,q:  not p or q'.
+Did reg return and returned p|q
+f = lambda p,q: p or q
+Defined 'A' as 'f = lambda p,q: p or q'.
+Did reg return and returned (!p|q)
+Did reg return and returned (!(p|q)|(p|q))
+f = lambda p,q: ( not (p or q) or (p or q))
+Defined 'B' as 'f = lambda p,q: ( not (p or q) or (p or q))'.
+-> : !p|q
+A  : p|q
+B  : (!(p|q)|(p|q))
++-----+-----------+
+| p,q | (->) !p|q |
++-----+-----------+
+| F,F | True      |
+| F,T | True      |
+| T,F | False     |
+| T,T | True      |
++-----+-----------+
++-----+---------+
+| p,q | (A) p|q |
++-----+---------+
+| F,F | False   |
+| F,T | True    |
+| T,F | True    |
+| T,T | True    |
++-----+---------+
++-----+-------------+
+| p,q | (B) ->{A,A} |
++-----+-------------+
+| F,F | True        |
+| F,T | True        |
+| T,F | True        |
+| T,T | True        |
++-----+-------------+
+Done!

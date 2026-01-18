@@ -39,11 +39,51 @@ def by_two(ls):
        i += 1
     return rtnLs
 
+def split_not_in(s, val, startIgnore, endIgnore):
+    ignore = False
+    returnList = []
+    curSlice = ""
+    for i in s:
+        if i == val and not ignore:
+            returnList.append(curSlice)
+            curSlice = ""
+        else:
+            curSlice += i
+        if i == startIgnore:
+            ignore = True
+        elif i == endIgnore:
+            ignore = False
+    returnList.append(curSlice)
+    return returnList
+
+def get_args(s, open, close):
+    depth = 0
+    rtnS = ""
+    for c in s:
+        if c == open:
+            depth += 1
+            if depth == 1:
+                continue
+        if c == close:
+            depth -= 1
+            if depth == 0:
+                return rtnS
+        if depth >= 1:
+            rtnS += c
+        
+
+
 functionReplacements = {
     "&":" and ",
     "^":" and ",
     "|":" or ",
     "!":" not "
+}
+functionOutputReplacements = {
+    1:True,
+    0:False,
+    True:True,
+    False:False
 }
 argumentReplacements = {
     "True":"True",
@@ -56,46 +96,43 @@ argumentReplacements = {
     "1":1
 }
 
-possibleArguments = "10ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+possibleArguments = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 userFns = {}
 
 class Sentence:
     global userFns
-    def __init__(self, name, text):
+    def __init__(self, name, body):
         self.name = name
-        self.text = text
+        self.ogText = body.lstrip()
         self.name = self.name.replace(" ", "")
-        formattedInput = ""
+        self.text = gen_func_helper(body)
         self.arguments = []
-        replacingFunctions = True
-        while replacingFunctions:
-            replacingFunctions = False
-            for c in userFns:
-                if userFns[c].name in self.text:
-                    self.text = self.text.replace(userFns[c].name, "("+userFns[c].text+")")
-                    replacingFunctions = True
         for c in self.text:
             if c in possibleArguments and c not in self.arguments:
-                self.arguments.append(c) 
+                self.arguments.append(c)
+        self.arguments = sorted(self.arguments)
+
+        formattedInput = ""
         for c in self.text:
             if c in functionReplacements:
                 formattedInput += functionReplacements[c]
             else:
                 formattedInput += c
+
         lambdaFormat = f"f = lambda {','.join(self.arguments)}: {formattedInput}"
+        if VERBOSE:
+            print(f"Defining '{self.name}' as '{lambdaFormat}'.")
         t = {}
         exec(lambdaFormat, t)
         for i in t:
             self.fn = t[i] 
-        try:
-            self.fn(*(("0,"*len(self.arguments))[:-1]).split(","))
-        except:
-            error(f"failed to define '{self.name}' as '{lambdaFormat}'. Most likely there is a syntax error in your function definition.")
-            return
+        # try:
+        #     self.fn(*(("0,"*len(self.arguments))[:-1]).split(","))
+        # except Exception as e:
+        #     error(f"failed to define '{self.name}' as '{lambdaFormat}'. Most likely there is a syntax error in your function definition.")
+        #     return
         userFns[self.name] = self
-        if ARGS.verbose:
-            print(f"Defined '{self.name}' as '{lambdaFormat}'.")
 
     def gen_table(self):
         truthDict = {}
@@ -108,7 +145,7 @@ class Sentence:
                     curArgs[idx] = True
                 elif c == "0":
                     curArgs[idx] = False
-            truthDict[nStr] = self.fn(*curArgs)
+            truthDict[nStr] = self.run(curArgs)
             if curArgs == [True]*len(self.arguments):
                 break
             i += 1
@@ -116,7 +153,7 @@ class Sentence:
 
     def table(self):
         truthDict = self.gen_table()
-        sec1, sec2 = f" {','.join(self.arguments)} ", f" ({self.name}) {self.text} "
+        sec1, sec2 = f" {','.join(self.arguments)} ", f" ({self.name}) {self.ogText} "
         header = sec1 + "|" + sec2
         sectionLens = [len(sec1), len(sec2)]
         header = "|" + header + "|"
@@ -142,6 +179,36 @@ class Sentence:
             # print(f"'{out}'")
             print(out)
         print(separator)
+
+    def run(self, args):
+        for idx,a in enumerate(args):
+            if a in argumentReplacements:
+                args[idx] = argumentReplacements[a]
+        result = self.fn(*args)
+        if result in functionOutputReplacements:
+            return functionOutputReplacements[result]
+        else:
+            error(f"The function {self.name} gave bad output '{result}'.")  
+    
+    def print_func(self):
+        cols = [["Function Name"],["User Definition"],["Fully Substituted Definition"]]
+        for i in range(len(cols)):
+            cols[i].append("-"*len(cols[i][0]))
+        cols[0].append(self.name)
+        cols[1].append(self.text)
+        cols[2].append(self.ogText)
+        longests = [0,0,0]
+        for i in range(len(cols)):
+            for e in cols[i]:
+                if len(e) > longests[i]:
+                    longests[i] = len(e)
+        print() 
+        for i in range(len(cols[0])):
+            for idx in range(len(cols)):
+                print(pad(cols[idx][i], " ", longests[idx]+1),end='\t')
+            print()
+        print()
+
     
     def __eq__(self,other):
         return (self.gen_table() == other.gen_table())
@@ -177,12 +244,6 @@ def load(file):
     except Exception as e:
         error(f"failed to load file with exception {e}")
 
-def print_func(fToPrint):
-    if fToPrint not in userFns:
-        error(f"couldn't find a definition for '{fToPrint}'")
-        return
-    print(f"{userFns[fToPrint].name} : {userFns[fToPrint].text}")
-
 def assign(name,text):
     t = Sentence(name, text)
     userFns[t.name] = t
@@ -197,31 +258,126 @@ def equivalent(fns):
             break
     print(result)
 
-def evaluate(f,args):
-    filteredArgs = []
-    for a in args:
-        if a in argumentReplacements:
-            filteredArgs.append(argumentReplacements[a])
-        if a in possibleArguments:
-            filteredArgs.append(a)
-    argDiff = len(userFns[f].arguments)-len(filteredArgs)
-    if argDiff != 0:
-        error(f"You're missing {argDiff} arguments for function {f}.")
-    print(userFns[f].fn(*filteredArgs))
+# def evaluate(f,args):
+#     filteredArgs = []
+#     for a in args:
+#         if a in argumentReplacements:
+#             filteredArgs.append(argumentReplacements[a])
+#         elif a in possibleArguments:
+#             filteredArgs.append(a)
+#     argDiff = len(userFns[f].arguments)-len(filteredArgs)
+#     if argDiff != 0:
+#         error(f"You're missing {argDiff} arguments for function {f}.")
+#     print(userFns[f].fn(*filteredArgs))
 
 def clear_screen():
     print("\033[2J\033[H", end="", flush=True)
 
+def display_help():
+    cols = [["COMMAND"],["DESCRIPTION"],["ARGUMENTS"]]
+    for i in range(len(cols)):
+        cols[i].append("-"*len(cols[i][0]))
+    for c in commandHelps:
+        cols[0].append(c)
+        cols[1].append(commandHelps[c][0])
+        cols[2].append(commandHelps[c][1])
+    longests = [0,0,0]
+    for i in range(len(cols)):
+        for e in cols[i]:
+            if len(e) > longests[i]:
+                longests[i] = len(e)
+    print() 
+    for i in range(len(cols[0])):
+        for idx in range(len(cols)):
+            print(pad(cols[idx][i], " ", longests[idx]+1),end='\t')
+        print()
+    print()
+
+def gen_func_helper(i):
+    print(f"Executing on {i}...")
+    splitI = split_not_in(i, "{", "{", "}")
+    i = i.lstrip()
+    if len(splitI) == 1:
+        for fn in userFns:
+            if fn in i:
+                return gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))
+        return i
+
+    else:
+        f = splitI[0]
+        args = get_args(i, "{", "}")
+        for fn in userFns:
+            if fn in f:
+                f = gen_func_helper(f.replace(f, "("+userFns[fn].text+")"))
+        args = split_not_in(args, ",", "{", "}")
+        for idx,a in enumerate(args):
+            args[idx] = gen_func_helper(a)
+        argNames = []
+        for c in f:
+            if c in possibleArguments:
+                argNames.append(c)
+        argNames = sorted(argNames)
+        # print(argNames, args)
+        fWithArgs = ""
+        for c in f:
+            if c in argNames:
+                fWithArgs+= args[argNames.index(c)]
+            else:
+                fWithArgs += c
+        return gen_func_helper(fWithArgs)
+
+# def arg_eval(i):
+#     if i in argumentReplacements:
+#         return argumentReplacements[i]
+#     f = ""
+#     args = ""
+#     inF = []
+#     for c in i:
+#         if c == "{":
+#             inF.append(c)
+#         elif c == "}":
+#             inF = inF[:-1]
+#         if len(inF) == 0:
+#             f += c 
+#         else:
+#             args += c
+#     print(f"function: {f}, args: {args}")
+#     if len(f) > 1:
+#         f = f[:-1]
+#     if len(args) > 1:
+#         args = split_not_in(args[1:], ",", "{", "}")
+#     print(f"function: {f}, args: {args}")
+#     if len(args) == 0:
+#         if f in userFns:
+#             return userFns[f].text
+#         return f
+#     if f in userFns: 
+#         f = userFns[f].fn
+#     else:
+#         f = Sentence("anon",f).fn
+#     print([arg_eval(a) for a in args])
+#     return f(*[arg_eval(a) for a in args])
+
+commandHelps = {
+    "help":["Display this help menu.","none"],
+    "cls, clear":["Clears screen.","none"],
+    "list":["Lists defined function names and bodies.","none"],
+    "table":["Displays truth table for given function.","1 (function to table)"],
+    "load":["Execute every line in a given file like it had been typed into SPARSE.","1 (file to load)"],
+    "print":["Prints function body and fully substituted definition for function.","1 (function to print)"]
+}
+
 commands = {
+    "help":lambda i : display_help(),
     "cls":lambda i : clear_screen(),
     "clear":lambda i : clear_screen(),
     "list":lambda i : list_funcs(),
     "table":lambda i : error("'table' takes a function to table.") if len(i.split(" ")) != 2 else print_table(i.split(" ")[1]),
     "load":lambda i : error("'load' takes a file to load") if len(i.split(" ")) != 2 else load(i.split(" ")[1]),
-    "print":lambda i : error("'print' takes a function to print") if len(i.split(" ")) != 2 else print_func(i.split(" ")[1]),
+    "print":lambda i : error("'print' takes a function to print") if len(i.split(" ")) != 2 else userFns[i.split(" ")[1]].print_func(),
     "==":lambda i : error("you must have two or more functions for comparison") if len(i.split("==")) < 2 else equivalent([ f.replace(" ","") for f in i.split("==")]),
     "=":lambda i : error("you must have a name and a body for a function definition") if (len([a for a in i.split("=") if a.replace(" ", "") != ""]) != 2) else assign(i.split("=")[0].replace(" ",""),i.split("=")[1]),
-    "{":lambda i : evaluate(i.split("{")[0],i.split("{")[1]),
+    "{":lambda i : print(Sentence("anon",i).run([]))
 }
 
 def parse(i):
@@ -236,17 +392,33 @@ def parse(i):
         error(f"SPARSE couldn't figure out what you wanted")
 
     except Exception as e:
-        print(f"There was an exception '{e}' during execution.")
+        error(f"There was an exception '{e}' during execution.")
         if ARGS.devmode:
             traceback.print_exc()
 
+
+VERSION = 2.0
+
+VERBOSE = False
+DEV_MODE = False
+parser = argparse.ArgumentParser(description="Symbolic logic PARSEr (SPARSE) version 1")
+parser.add_argument("--devmode", action="store_true", help="Turn on developer mode.")
+parser.add_argument("--verbose", action="store_true", help="Be more verbose about what SPARSE is doing.")
+parser.add_argument("-f", "--file", type=str, help="Run SPARSE on a file then quit.")
+ARGS = parser.parse_args()
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Symbolic logic PARSEr (SPARSE) version 1")
-    parser.add_argument("--devmode", action="store_true", help="Turn on developer mode.")
-    parser.add_argument("--verbose", action="store_true", help="Be more verbose about what SPARSE is doing.")
-    ARGS = parser.parse_args()
-    while True:
-        i = input("sparse> ")
-        parse(i)
+    VERBOSE, DEV_MODE = ARGS.verbose, ARGS.devmode
+    if DEV_MODE:
+        VERBOSE = True
+    if ARGS.file != None:
+        load(ARGS.file)
+    else:
+        print(f"Welcome to SPARSE (Symbolic logic PARSEr) version {VERSION}. Type 'help' for a list of commands and uses.")
+        print("Read the README.md for explanation of syntax and usage. Enjoy!")
+        print("AUTHOR: James Burkett (Xtreme Software Developers) ; (xtremesoftwaredev@gmail.com)")
+        while True:
+            i = input("sparse> ")
+            parse(i)
 else:
     warn("Not running as main")
