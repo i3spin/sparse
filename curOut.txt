@@ -1,14 +1,7 @@
 Loading file 'test'...
-Did reg return and returned !p|q
-f = lambda p,q:  not p or q
-Defined '->' as 'f = lambda p,q:  not p or q'.
-Did reg return and returned p|q
-f = lambda p,q: p or q
-Defined 'A' as 'f = lambda p,q: p or q'.
-Did reg return and returned (!p|q)
-Did reg return and returned (!(p|q)|(p|q))
-f = lambda p,q: ( not (p or q) or (p or q))
-Defined 'B' as 'f = lambda p,q: ( not (p or q) or (p or q))'.
+Defining '->' as 'f = lambda p,q:  not p or q'.
+Defining 'A' as 'f = lambda p,q: p or q'.
+Defining 'B' as 'f = lambda p,q: ( not (p or q) or (p or q))'.
 -> : !p|q
 A  : p|q
 B  : (!(p|q)|(p|q))

@@ -195,8 +195,8 @@ class Sentence:
         for i in range(len(cols)):
             cols[i].append("-"*len(cols[i][0]))
         cols[0].append(self.name)
-        cols[1].append(self.text)
-        cols[2].append(self.ogText)
+        cols[1].append(self.ogText)
+        cols[2].append(self.text)
         longests = [0,0,0]
         for i in range(len(cols)):
             for e in cols[i]:
@@ -294,13 +294,15 @@ def display_help():
     print()
 
 def gen_func_helper(i):
-    print(f"Executing on {i}...")
+    # print(f"running on {i}")
     splitI = split_not_in(i, "{", "{", "}")
     i = i.lstrip()
     if len(splitI) == 1:
         for fn in userFns:
             if fn in i:
+                # print(f"returned {gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))}")
                 return gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))
+        # print(f"returned {i}")
         return i
 
     else:
@@ -308,7 +310,9 @@ def gen_func_helper(i):
         args = get_args(i, "{", "}")
         for fn in userFns:
             if fn in f:
-                f = gen_func_helper(f.replace(f, "("+userFns[fn].text+")"))
+                # print(f"here", f)
+                f = gen_func_helper(f.replace(fn, "("+userFns[fn].text+")"))
+        # print(f)
         args = split_not_in(args, ",", "{", "}")
         for idx,a in enumerate(args):
             args[idx] = gen_func_helper(a)
