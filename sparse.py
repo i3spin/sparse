@@ -3,7 +3,6 @@
 This is a Symbolic logic PARSEr (SPARSE)
 '''
 
-import readline
 import traceback
 import argparse
 
