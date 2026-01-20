@@ -3,10 +3,12 @@
 This is a Symbolic logic PARSEr (SPARSE)
 '''
 
-import readline
+import platform
 import traceback
 import argparse
 
+if platform.system() == "Linux" or platform.system() == "Darwin":
+    import readline
 
 colors = {'blue': '\033[31;1;34m',
           'yellow': '\033[31;1;33m',
@@ -96,7 +98,7 @@ argumentReplacements = {
     "1":1
 }
 
-possibleArguments = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+possibleArguments = "ABCDEGHIJKLMNOPQRSUVWXYZabcdeghijklmnopqrsuvwxyz"
 
 userFns = {}
 
@@ -109,7 +111,7 @@ class Sentence:
         self.text = gen_func_helper(body)
         self.arguments = []
         for c in self.text:
-            if c in possibleArguments and c not in self.arguments:
+            if c in possibleArguments and c not in self.arguments and c not in argumentReplacements:
                 self.arguments.append(c)
         self.arguments = sorted(self.arguments)
 
@@ -117,6 +119,8 @@ class Sentence:
         for c in self.text:
             if c in functionReplacements:
                 formattedInput += functionReplacements[c]
+            elif c in argumentReplacements:
+                formattedInput += argumentReplacements[c]
             else:
                 formattedInput += c
 
@@ -217,14 +221,18 @@ def list_funcs():
     out = []
     for func in userFns:
         out.append(f"{userFns[func].name}")
+    if out == []:
+        return
     longest = 0
     for func in out:
         if len(func) > longest:
             longest = len(func) 
+    print()
     for idx,func in enumerate(out):
         out[idx] = pad(func, " ", longest)
-        out[idx] += f" : {userFns[func].text}"
+        out[idx] += f" : {userFns[func].ogText}"
         print(out[idx])
+    print()
 
 def print_table(fToTable):
     if fToTable in userFns:
@@ -312,7 +320,6 @@ def gen_func_helper(i):
             if fn in f:
                 # print(f"here", f)
                 f = gen_func_helper(f.replace(fn, "("+userFns[fn].text+")"))
-        # print(f)
         args = split_not_in(args, ",", "{", "}")
         for idx,a in enumerate(args):
             args[idx] = gen_func_helper(a)
