@@ -3,7 +3,7 @@ Stands for Symbolic logic PARSEr.
 This is a program that leverages python lambda functions to parse and perform basic tasks with symbolic logic.
 
 ## Using SPARSE
-SPARSE is a command line program executed by typing `python3 sparse`in the sparse directory. You can also double click the sparse file on a Windows machine if you have it so configured. 
+SPARSE is a command line program executed by typing `python3 sparse`in the sparse directory. You can also double click the sparse file on a Windows machine if you have it so configured. You can also use the `--verbose` and `--devmode` command line arguments to add more description of what SPARSE is up to if you would like.
 
 ### Syntax
 The sparse syntax is very basic and can be summed up in the following way:
@@ -12,8 +12,46 @@ The sparse syntax is very basic and can be summed up in the following way:
 - `|` -> boolean `OR`
 - `!` -> boolean `NOT`
 #### Function definition
-Functions are defined by typing the function name and then the function definition using logic symbols. An example would be `G = (p^q)`, where G is defined as boolean `(p and q)`. You can also compose functions with one another to create larger functions. For example, using the previous function G, you could make another function H where `H = !G`, which would define H as boolean `!(p^q)`. It is important to note when combining functions that the variables from the sub-function are reused directly. For example, if I define `A = p` and `B = A^!p`, the resulting function would be defined as `B = p^!p`, because it inherited the `p` variable from the function `A`.
-
+Functions are defined by typing the function name and then the function definition using logic symbols. An example would be `G = (p^q)`, where G is defined as boolean `(p and q)`. You can also compose functions with one another to create larger functions. For example, using the previous function G, you could make another function H where `H = !G`, which would define H as boolean `!(p^q)`. It is important to note when combining functions that the variables from the sub-function are reused directly. For example, if I define `A = p` and `B = A^!p`, the resulting function would be defined as `B = p^!p`, because it inherited the `p` variable from the function `A`. Also, it is extremely important to ensure that you do not attempt to use the arguments T,F,t or f in your functions or as function names because these are reserved for inputs to functions and are mapped to true false values directly.
+You can also compose functions by inputting functions as arguments to other functions. For example, let's assume we have defined the following functions in sparse: 
+```
+(.sparse-venv) james@rauros-linux:~/sparse$ ./sparse.py 
+Welcome to SPARSE (Symbolic logic PARSEr) version 2.0. Type 'help' for a list of commands and uses.
+Read the README.md for explanation of syntax and usage. Enjoy!
+AUTHOR: James Burkett (Xtreme Software Developers) ; (xtremesoftwaredev@gmail.com)
+sparse> -> = !p|q
+sparse> table ->        
++-----+-----------+
+| p,q | (->) !p|q |
++-----+-----------+
+| F,F | True      |
+| F,T | True      |
+| T,F | False     |
+| T,T | True      |
++-----+-----------+
+sparse> nand = !(p^q)
+sparse> table nand
++-----+---------------+
+| p,q | (nand) !(p^q) |
++-----+---------------+
+| F,F | True          |
+| F,T | True          |
+| T,F | True          |
+| T,T | False         |
++-----+---------------+
+sparse> xor = (p|q)^!(p^q)
+sparse> table xor
++-----+--------------------+
+| p,q | (xor) (p|q)^!(p^q) |
++-----+--------------------+
+| F,F | False              |
+| F,T | True               |
+| T,F | True               |
+| T,T | False              |
++-----+--------------------+
+sparse> 
+```
+We can compose another function (we'll call it G) that takes some of these functions as arguments.
 #### Comparing functions
 You can compare logical functions with the `==` operator. typing `f1 == f2` in the sparse terminal will print `True` if the functions are logically equivalent (if their truth tables are equal) and `False` if not. You can also compare several functions at once, but if any of the comparisons are false, the entire statement will evaluate to false. Here are some examples of function comparison:
 ```
