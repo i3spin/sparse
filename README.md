@@ -5,6 +5,8 @@ This is a program that leverages python lambda functions to parse and perform ba
 ## Using SPARSE
 SPARSE is a command line program executed by typing `python3 sparse`in the sparse directory. You can also double click the sparse file on a Windows machine if you have it so configured. You can also use the `--verbose` and `--devmode` command line arguments to add more description of what SPARSE is up to if you would like.
 
+If you do not have git installed on your machine, you can dowload and extract the zip files from this webpage.
+
 ### Syntax
 The sparse syntax is very basic and can be summed up in the following way:
 #### Basic symbols:
