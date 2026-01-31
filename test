@@ -10,3 +10,4 @@ table B
 table xor
 L = ->{p,q}
 | = !(p^q)
+print |
