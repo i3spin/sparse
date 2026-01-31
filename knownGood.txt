@@ -1,18 +1,13 @@
 Loading file 'test'...
-Defining '->' as 'f = lambda p,q:  not p or q'.
-Defining 'A' as 'f = lambda p,q: p or q'.
-Defining 'B' as 'f = lambda p,q: ( not (p or q) or (p or q))'.
-Defining 'xor' as 'f = lambda p,q:  not (p and q) and (p or q)'.
-Defining 'it' as 'f = lambda p,q:  not ( not (p and q) and (p or q)) or ( not p and q)'.
 
-->  : !p|q
-A   : p|q
+->  : !pvq
+A   : pvq
 B   : ->{A,A}
 xor : !(p^q)^(p|q)
-it  : !xor|(!p^q)
+it  : !xorv(!p^q)
 
 +-----+-----------+
-| p,q | (->) !p|q |
+| p,q | (->) !pvq |
 +-----+-----------+
 | F,F | True      |
 | F,T | True      |
@@ -20,7 +15,7 @@ it  : !xor|(!p^q)
 | T,T | True      |
 +-----+-----------+
 +-----+---------+
-| p,q | (A) p|q |
+| p,q | (A) pvq |
 +-----+---------+
 | F,F | False   |
 | F,T | True    |
@@ -43,7 +38,4 @@ it  : !xor|(!p^q)
 | T,F | True               |
 | T,T | False              |
 +-----+--------------------+
-Defining 'anon' as 'f = lambda p,q: ( not ( not (p and q) and (p or q)) or ( not p and q))'.
-Defining 'anon' as 'f = lambda p,q: ( not p or q)'.
-True
 Done!

@@ -1,11 +1,12 @@
--> = !p|q
-A = p|q
+-> = !pvq
+A = pvq
 B = ->{A,A}
 xor = !(p^q)^(p|q)
-it = !xor|(!p^q)
+it = !xorv(!p^q)
 list
 table ->
 table A
 table B
 table xor
-it == ->
+L = ->{p,q}
+| = !(p^q)

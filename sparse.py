@@ -6,9 +6,8 @@ This is a Symbolic logic PARSEr (SPARSE)
 import platform
 import traceback
 import argparse
-
-if platform.system() == "Linux" or platform.system() == "Darwin":
-    import readline
+import sys
+import dbg
 
 colors = {'blue': '\033[31;1;34m',
           'yellow': '\033[31;1;33m',
@@ -42,6 +41,8 @@ def by_two(ls):
     return rtnLs
 
 def split_not_in(s, val, startIgnore, endIgnore):
+    if s in [None, ""]:
+        return s
     ignore = False
     returnList = []
     curSlice = ""
@@ -62,6 +63,7 @@ def get_args(s, open, close):
     depth = 0
     rtnS = ""
     for c in s:
+        d.dbg(f"{c} : {rtnS}")
         if c == open:
             depth += 1
             if depth == 1:
@@ -72,13 +74,42 @@ def get_args(s, open, close):
                 return rtnS
         if depth >= 1:
             rtnS += c
+    d.dbg(f"Returned {rtnS}")
+    return rtnS
+
+def arg_sub(function, args):
+
+    if args[0] == "{":
+        args = args[1:]
+    if args[-1] == "}":
+        args = args[:-1]
+    args = split_not_in(args, ",", "{", "}")
+
+    functionBody = userFns[function].text
+    argNames = userFns[function].arguments
+    d.dbg(f"functionBody = {functionBody}; argNames = {argNames}")
+    subbedFunction = ""
+    for char in functionBody:
+        d.dbg(f"subbedFunction = {subbedFunction}")
+        d.dbg(f"Working on {char}")
+        if char in argNames:
+            d.dbg(f"argumnet, appending ({args[argNames.index(char)]})")
+            subbedFunction += args[argNames.index(char)]
+        else:
+            d.dbg(f"not argument")
+            subbedFunction += char
         
+    if subbedFunction[-1] == "}":
+        subbedFunction = subbedFunction[:-1]
+    d.dbg(f"returning {subbedFunction}", clr='yellow')
+    return "("+subbedFunction+")"
+
 
 
 functionReplacements = {
     "&":" and ",
     "^":" and ",
-    "|":" or ",
+    "v":" or ",
     "!":" not "
 }
 functionOutputReplacements = {
@@ -94,11 +125,11 @@ argumentReplacements = {
     "F":"False",
     "t":"True",
     "f":"False",
-    "0":0,
-    "1":1
+    "0":"0",
+    "1":"1"
 }
 
-possibleArguments = "ABCDEGHIJKLMNOPQRSUVWXYZabcdeghijklmnopqrsuvwxyz"
+possibleArguments = "ABCDEGHIJKLMNOPQRSUVWXYZabcdeghijklmnopqrsuwxyz"
 
 userFns = {}
 
@@ -124,11 +155,11 @@ class Sentence:
             else:
                 formattedInput += c
 
-        lambdaFormat = f"f = lambda {','.join(self.arguments)}: {formattedInput}"
+        self.lambdaFormat = f"f = lambda {','.join(self.arguments)}: {formattedInput}"
         if VERBOSE:
-            print(f"Defining '{self.name}' as '{lambdaFormat}'.")
+            print(f"Defining '{self.name}' as '{self.lambdaFormat}'.")
         t = {}
-        exec(lambdaFormat, t)
+        exec(self.lambdaFormat, t)
         for i in t:
             self.fn = t[i] 
         # try:
@@ -188,20 +219,22 @@ class Sentence:
         for idx,a in enumerate(args):
             if a in argumentReplacements:
                 args[idx] = argumentReplacements[a]
+        d.dbg(f"Running {self.lambdaFormat} with {args}")
         result = self.fn(*args)
         if result in functionOutputReplacements:
             return functionOutputReplacements[result]
         else:
-            error(f"The function {self.name} gave bad output '{result}'.")  
+            error(f"The function {self.text} gave bad output '{result}'.")  
     
     def print_func(self):
-        cols = [["Function Name"],["User Definition"],["Fully Substituted Definition"]]
+        cols = [["Function Name"],["User Definition"],["Fully Substituted Definition"],["Lambda Function Definition"]]
         for i in range(len(cols)):
             cols[i].append("-"*len(cols[i][0]))
         cols[0].append(self.name)
         cols[1].append(self.ogText)
         cols[2].append(self.text)
-        longests = [0,0,0]
+        cols[3].append(self.lambdaFormat)
+        longests = [0]*len(cols)
         for i in range(len(cols)):
             for e in cols[i]:
                 if len(e) > longests[i]:
@@ -302,40 +335,103 @@ def display_help():
     print()
 
 def gen_func_helper(i):
-    # print(f"running on {i}")
+
+    parsedString = i
+
+    if "{" in i:           
+        for fn in userFns:
+            start = 0
+            end = start + len(fn)
+            while end < len(i):
+                end = start + len(fn)
+                d.dbg(f"fn = {fn} ; chunk = {parsedString[start:end]}")
+                if parsedString[start:end] == fn:
+                    if parsedString[end] == "{":
+                        d.dbg("made it here")
+                        # we have arguments
+                        argsEnd = end+1
+                        argString = "{"
+                        depth = 1
+                        while depth >= 1 and argsEnd < len(parsedString):
+                            if parsedString[argsEnd] == "{":
+                                depth += 1
+                            elif parsedString[argsEnd] == "}":
+                                depth -= 1
+                            d.dbg(f"added {i[argsEnd]} to argString")
+                            argString += parsedString[argsEnd]
+                            argsEnd += 1
+                        d.dbg(f"substituting with fn = {fn}, argString = {argString}")
+                        substitutedFunction = arg_sub(fn, argString)
+                        parsedString = parsedString[:start] + substitutedFunction + parsedString[argsEnd:]
+                        d.dbg(f"parsedString = {parsedString}",clr='yellow')
+                        d.dbg(f"substituedFunction = {substitutedFunction}")
+                        return gen_func_helper(parsedString)
+                    
+                    elif parsedString[end] in functionReplacements:
+                        # there are no arguments so just append the functions whole body
+                        parsedString = parsedString[:start] + userFns[fn].text + parsedString[end:]
+                        return gen_func_helper(parsedString)
+                start += 1
+    
+    else:
+        for fn in userFns:
+            if fn in i:
+                i = i.replace(fn, userFns[fn].text)
+                return gen_func_helper(i)
+        return i                
+
+    d.dbg(f"args: {args}")
+
+
+    d.dbg(f"running on {i}")
     splitI = split_not_in(i, "{", "{", "}")
     i = i.lstrip()
     if len(splitI) == 1:
         for fn in userFns:
+            d.dbg(f"trying {fn}")
             if fn in i:
-                # print(f"returned {gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))}")
+                d.dbg(f"returned {gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))}")
                 return gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))
-        # print(f"returned {i}")
+        d.dbg(f"returned {i}")
         return i
 
     else:
-        f = splitI[0]
-        args = get_args(i, "{", "}")
-        for fn in userFns:
-            if fn in f:
-                # print(f"here", f)
-                f = gen_func_helper(f.replace(fn, "("+userFns[fn].text+")"))
-        args = split_not_in(args, ",", "{", "}")
-        for idx,a in enumerate(args):
-            args[idx] = gen_func_helper(a)
-        argNames = []
-        for c in f:
-            if c in possibleArguments:
-                argNames.append(c)
-        argNames = sorted(argNames)
-        # print(argNames, args)
-        fWithArgs = ""
-        for c in f:
-            if c in argNames:
-                fWithArgs+= args[argNames.index(c)]
-            else:
-                fWithArgs += c
-        return gen_func_helper(fWithArgs)
+        fullText = ""
+        d.dbg(len(splitI))
+        for funcIndex, argsIndex in zip(range(0, len(splitI), 2), range(1, len(splitI)+1,2)):
+            f = splitI[funcIndex]
+            d.dbg(f"Running subloop with fidx = {funcIndex}, argidx = {argsIndex}")
+            d.dbg(splitI)
+            args = get_args("{"+splitI[argsIndex], "{", "}")
+            d.dbg(f"got args with {splitI[argsIndex]} as args = {args}")
+            for fn in userFns:
+                if fn in f:
+                    d.dbg(f"here {f}")
+                    f = gen_func_helper(f.replace(fn, "("+userFns[fn].text+")"))
+                    d.dbg(f"Back with f as {f}")
+            
+            args = split_not_in(args, ",", "{", "}")
+            d.dbg(f"here, args = {args}")
+            if args == None:
+                d.dbg(f"returned {f}")
+                return f
+            for idx,a in enumerate(args):
+                args[idx] = gen_func_helper(a)
+            argNames = []
+            for c in f:
+                if c in possibleArguments:
+                    argNames.append(c)
+            argNames = sorted(argNames)
+            d.dbg(f"{argNames}, {args}")
+            fWithArgs = ""
+            for c in f:
+                if c in argNames:
+                    fWithArgs += args[argNames.index(c)]
+                else:
+                    fWithArgs += c
+            d.dbg(f"fWithArgs: {fWithArgs}")
+            fullText += gen_func_helper(fWithArgs)
+        return fullText
 
 # def arg_eval(i):
 #     if i in argumentReplacements:
@@ -408,6 +504,9 @@ def parse(i):
             traceback.print_exc()
 
 
+if platform.system() == "Linux" or platform.system() == "Darwin":
+    import readline
+
 VERSION = 2.0
 
 VERBOSE = False
@@ -422,6 +521,11 @@ if __name__ == "__main__":
     VERBOSE, DEV_MODE = ARGS.verbose, ARGS.devmode
     if DEV_MODE:
         VERBOSE = True
+    if not VERBOSE:
+        d = dbg.debug(args=" : -10 sps=t suppressWarnings=t suppressInfo=t")
+    else:
+        d = dbg.debug(args=sys.argv)
+
     if ARGS.file != None:
         load(ARGS.file)
     else:
