@@ -7,6 +7,8 @@ SPARSE is a command line program executed by typing `python3 sparse`in the spars
 
 If you do not have git installed on your machine, you can dowload and extract the zip files from this webpage.
 
+I hate it when software vendors demonize their customers and prevent good use of their software through excessive fees and usage contracts, but I also recognize and share the desire to profit off of one's hard work. In that spirit, I provide this software free of charge and free to distribute, but I ask that you keep this message attached. I am also providing a link to my venmo account below. If you use this program and think it has given you value, I would be grateful if you would pay me for that value. Thanks!
+
 ### Syntax
 The sparse syntax is very basic and can be summed up in the following way:
 #### Basic symbols:
