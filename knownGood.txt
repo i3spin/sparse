@@ -38,4 +38,9 @@ it  : !xorv(!p^q)
 | T,F | True               |
 | T,T | False              |
 +-----+--------------------+
+
+Function Name 	User Definition 	Fully Substituted Definition 	Lambda Function Definition      	
+------------- 	--------------- 	---------------------------- 	--------------------------      	
+|             	!(p^q)          	 !(p^q)                      	f = lambda p,q:   not (p and q) 	
+
 Done!

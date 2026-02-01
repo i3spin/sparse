@@ -6,5 +6,6 @@ else
     echo -e "\033[31;1mSPARSE fails test (output is not as expected from knownGood.txt)\033[0m"
     colordiff knownGood.txt curOut.txt
 fi
+rm curOut.txt
 
 

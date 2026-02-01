@@ -162,11 +162,6 @@ class Sentence:
         exec(self.lambdaFormat, t)
         for i in t:
             self.fn = t[i] 
-        # try:
-        #     self.fn(*(("0,"*len(self.arguments))[:-1]).split(","))
-        # except Exception as e:
-        #     error(f"failed to define '{self.name}' as '{lambdaFormat}'. Most likely there is a syntax error in your function definition.")
-        #     return
         userFns[self.name] = self
 
     def gen_table(self):
@@ -201,17 +196,11 @@ class Sentence:
             out = "| "
             for c in i:
                 out += r[c]+","
-            # print(f"'{out}'")
             out = out[:-1] 
-            # print(f"'{out}'")
             out = pad(out," ",sectionLens[0]+1)
-            # print(f"'{out}'")
             out += "| "
-            # print(f"'{out}'")
             out += f"{truthDict[i]}"
-            # print(f"'{out}'")
             out = pad(out, " ", sectionLens[0]+sectionLens[1]+2) + "|"
-            # print(f"'{out}'")
             print(out)
         print(separator)
 
@@ -299,18 +288,6 @@ def equivalent(fns):
             break
     print(result)
 
-# def evaluate(f,args):
-#     filteredArgs = []
-#     for a in args:
-#         if a in argumentReplacements:
-#             filteredArgs.append(argumentReplacements[a])
-#         elif a in possibleArguments:
-#             filteredArgs.append(a)
-#     argDiff = len(userFns[f].arguments)-len(filteredArgs)
-#     if argDiff != 0:
-#         error(f"You're missing {argDiff} arguments for function {f}.")
-#     print(userFns[f].fn(*filteredArgs))
-
 def clear_screen():
     print("\033[2J\033[H", end="", flush=True)
 
@@ -379,91 +356,6 @@ def gen_func_helper(i):
                 i = i.replace(fn, userFns[fn].text)
                 return gen_func_helper(i)
         return i                
-
-    d.dbg(f"args: {args}")
-
-
-    d.dbg(f"running on {i}")
-    splitI = split_not_in(i, "{", "{", "}")
-    i = i.lstrip()
-    if len(splitI) == 1:
-        for fn in userFns:
-            d.dbg(f"trying {fn}")
-            if fn in i:
-                d.dbg(f"returned {gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))}")
-                return gen_func_helper(i.replace(fn, "("+userFns[fn].text+")"))
-        d.dbg(f"returned {i}")
-        return i
-
-    else:
-        fullText = ""
-        d.dbg(len(splitI))
-        for funcIndex, argsIndex in zip(range(0, len(splitI), 2), range(1, len(splitI)+1,2)):
-            f = splitI[funcIndex]
-            d.dbg(f"Running subloop with fidx = {funcIndex}, argidx = {argsIndex}")
-            d.dbg(splitI)
-            args = get_args("{"+splitI[argsIndex], "{", "}")
-            d.dbg(f"got args with {splitI[argsIndex]} as args = {args}")
-            for fn in userFns:
-                if fn in f:
-                    d.dbg(f"here {f}")
-                    f = gen_func_helper(f.replace(fn, "("+userFns[fn].text+")"))
-                    d.dbg(f"Back with f as {f}")
-            
-            args = split_not_in(args, ",", "{", "}")
-            d.dbg(f"here, args = {args}")
-            if args == None:
-                d.dbg(f"returned {f}")
-                return f
-            for idx,a in enumerate(args):
-                args[idx] = gen_func_helper(a)
-            argNames = []
-            for c in f:
-                if c in possibleArguments:
-                    argNames.append(c)
-            argNames = sorted(argNames)
-            d.dbg(f"{argNames}, {args}")
-            fWithArgs = ""
-            for c in f:
-                if c in argNames:
-                    fWithArgs += args[argNames.index(c)]
-                else:
-                    fWithArgs += c
-            d.dbg(f"fWithArgs: {fWithArgs}")
-            fullText += gen_func_helper(fWithArgs)
-        return fullText
-
-# def arg_eval(i):
-#     if i in argumentReplacements:
-#         return argumentReplacements[i]
-#     f = ""
-#     args = ""
-#     inF = []
-#     for c in i:
-#         if c == "{":
-#             inF.append(c)
-#         elif c == "}":
-#             inF = inF[:-1]
-#         if len(inF) == 0:
-#             f += c 
-#         else:
-#             args += c
-#     print(f"function: {f}, args: {args}")
-#     if len(f) > 1:
-#         f = f[:-1]
-#     if len(args) > 1:
-#         args = split_not_in(args[1:], ",", "{", "}")
-#     print(f"function: {f}, args: {args}")
-#     if len(args) == 0:
-#         if f in userFns:
-#             return userFns[f].text
-#         return f
-#     if f in userFns: 
-#         f = userFns[f].fn
-#     else:
-#         f = Sentence("anon",f).fn
-#     print([arg_eval(a) for a in args])
-#     return f(*[arg_eval(a) for a in args])
 
 commandHelps = {
     "help":["Display this help menu.","none"],
