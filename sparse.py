@@ -59,24 +59,6 @@ def split_not_in(s, val, startIgnore, endIgnore):
     returnList.append(curSlice)
     return returnList
 
-def get_args(s, open, close):
-    depth = 0
-    rtnS = ""
-    for c in s:
-        d.dbg(f"{c} : {rtnS}")
-        if c == open:
-            depth += 1
-            if depth == 1:
-                continue
-        if c == close:
-            depth -= 1
-            if depth == 0:
-                return rtnS
-        if depth >= 1:
-            rtnS += c
-    d.dbg(f"Returned {rtnS}")
-    return rtnS
-
 def arg_sub(function, args):
 
     if args[0] == "{":
