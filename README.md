@@ -220,3 +220,5 @@ Typing `help` in the sparse terminal will list commands, what they do, and how t
 
 # Support
 If you have new feature requests or bug reports, feel free to create an issue on the github page and/or email me at xtremesoftwaredev@gmail.com. For the time being I am actively supporting this project. If this ever changes I will change this message to let you know.
+
+you are free to copy the cone from this project and make edits yourself, but this repo is a push mirror of a private repo of mine, so external edits made here will not stick around.
