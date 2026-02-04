@@ -335,7 +335,7 @@ def gen_func_helper(i):
     else:
         for fn in userFns:
             if fn in i:
-                i = i.replace(fn, userFns[fn].text)
+                i = i.replace(fn, "("+userFns[fn].text+")")
                 return gen_func_helper(i)
         return i                
 
