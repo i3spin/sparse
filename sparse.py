@@ -358,7 +358,9 @@ commands = {
     "print":lambda i : error("'print' takes a function to print") if len(i.split(" ")) != 2 else userFns[i.split(" ")[1]].print_func(),
     "==":lambda i : error("you must have two or more functions for comparison") if len(i.split("==")) < 2 else equivalent([ f.replace(" ","") for f in i.split("==")]),
     "=":lambda i : error("you must have a name and a body for a function definition") if (len([a for a in i.split("=") if a.replace(" ", "") != ""]) != 2) else assign(i.split("=")[0].replace(" ",""),i.split("=")[1]),
-    "{":lambda i : print(Sentence("anon",i).run([]))
+    "{":lambda i : print(Sentence("anon",i).run([])),
+    "exit":lambda i : (print("Bye!"),exit())
+
 }
 
 def parse(i):
